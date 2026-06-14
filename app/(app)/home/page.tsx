@@ -16,7 +16,7 @@ import { ApiError } from '@/lib/api/types';
 // TODO: backend does not return total message count on the home screen endpoint.
 // openedCount (link views) is available and shown. Add message count when backend exposes it.
 
-const APP_HOST = process.env.NEXT_PUBLIC_APP_HOST ?? 'omg.app';
+const APP_HOST = process.env.NEXT_PUBLIC_APP_HOST || 'omgksa.com';
 
 function Ticker() {
   const items = ['OMG!', 'ANONYMOUS', 'BOOM 💥', 'MYSTERY SENDER', 'WOW 🔥', 'مجهول تماماً'];
