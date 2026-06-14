@@ -18,8 +18,16 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: 'OMG! — Anonymous Chat',
-  description: 'اعرف اللي الناس عايزين يقولوه — كلام مجهول بالكامل',
+  title: 'OMG! Anonymous Chat',
+  description: 'Send and receive anonymous messages, open private chats, and share messages as cards.',
+  openGraph: {
+    title: 'OMG! Anonymous Chat',
+    description: 'استقبل رسائل مجهولة، افتح شات خاص، وشارك الرسائل ككارت.',
+    url: 'https://omgksa.com',
+    siteName: 'OMG!',
+    locale: 'ar_SA',
+    type: 'website',
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
