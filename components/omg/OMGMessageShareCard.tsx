@@ -28,7 +28,7 @@ interface OMGMessageShareCardProps {
 export const OMGMessageShareCard = React.forwardRef<HTMLDivElement, OMGMessageShareCardProps>(
   function OMGMessageShareCard({ message, aliasName, appUrl = 'omg-anonymous-app.vercel.app' }, ref) {
     const isLong = message.length > 180;
-    const fontSize = isLong ? 52 : message.length > 80 ? 64 : 80;
+    const fontSize = isLong ? 40 : message.length > 80 ? 52 : 64;
 
     return (
       <div
@@ -45,12 +45,12 @@ export const OMGMessageShareCard = React.forwardRef<HTMLDivElement, OMGMessageSh
           overflow: 'hidden',
         }}
       >
-        {/* Grid dots background */}
+        {/* Square grid lines background */}
         <div style={{
           position: 'absolute',
           inset: 0,
-          backgroundImage: `radial-gradient(circle, rgba(0,0,0,0.07) 1.5px, transparent 1.5px)`,
-          backgroundSize: '36px 36px',
+          backgroundImage: `linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px)`,
+          backgroundSize: '40px 40px',
           pointerEvents: 'none',
         }} />
 
@@ -81,7 +81,7 @@ export const OMGMessageShareCard = React.forwardRef<HTMLDivElement, OMGMessageSh
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '64px 72px 40px',
+          padding: '48px 72px 28px',
           position: 'relative',
           zIndex: 1,
         }}>
@@ -125,7 +125,7 @@ export const OMGMessageShareCard = React.forwardRef<HTMLDivElement, OMGMessageSh
 
         {/* ── TITLE BAND ── */}
         <div style={{
-          padding: '0 72px 48px',
+          padding: '0 72px 28px',
           position: 'relative',
           zIndex: 1,
         }}>
@@ -155,7 +155,7 @@ export const OMGMessageShareCard = React.forwardRef<HTMLDivElement, OMGMessageSh
         {/* ── MESSAGE CARD ── */}
         <div style={{
           flex: 1,
-          padding: '0 64px',
+          padding: '0 56px',
           display: 'flex',
           alignItems: 'center',
           position: 'relative',
@@ -166,7 +166,7 @@ export const OMGMessageShareCard = React.forwardRef<HTMLDivElement, OMGMessageSh
             background: COLORS.card,
             border: `5px solid ${COLORS.ink}`,
             borderRadius: 40,
-            padding: '64px 72px',
+            padding: '48px 56px',
             boxShadow: `10px 10px 0 ${COLORS.ink}`,
             position: 'relative',
           }}>
@@ -205,7 +205,7 @@ export const OMGMessageShareCard = React.forwardRef<HTMLDivElement, OMGMessageSh
 
         {/* ── FOOTER ── */}
         <div style={{
-          padding: '48px 72px 64px',
+          padding: '36px 72px 48px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
