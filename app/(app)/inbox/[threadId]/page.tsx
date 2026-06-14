@@ -137,8 +137,9 @@ export default function ChatPage() {
     // Optimistic insert at bottom (newest)
     const tempMsg: MessageDto = {
       id: `temp-${Date.now()}`,
-      authorRole: 'recipient',
+      authorRole: isRecipientView ? 'recipient' : 'anonymous',
       displayName: 'أنت',
+      isMine: true,
       content: text,
       contentType: 'text',
       sentAt: new Date().toISOString(),
@@ -239,6 +240,7 @@ export default function ChatPage() {
   }
 
   const isBlocked = thread?.isBlocked ?? false;
+  const isRecipientView = thread?.viewerRole !== 'sender';
 
   // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) {
@@ -279,7 +281,7 @@ export default function ChatPage() {
         {/* ── Header ────────────────────────────────────────────────────── */}
         <div className="flex items-center gap-3 px-4 border-b-[3px] border-[var(--omg-ink)] bg-[var(--omg-card)] omg-safe-top pb-3 flex-shrink-0">
           <button
-            onClick={() => router.push('/inbox')}
+            onClick={() => router.push(isRecipientView ? '/inbox' : '/inbox?tab=sent')}
             className="text-[var(--omg-ink)] text-[22px] font-black flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center"
             aria-label="رجوع للرسائل"
           >←</button>
@@ -290,7 +292,8 @@ export default function ChatPage() {
               {isBlocked ? '🚫 محظور' : '🔒 هوية مجهولة'}
             </div>
           </div>
-          {!isBlocked && (
+          {/* Block/report only available to recipient */}
+          {isRecipientView && !isBlocked && (
             <div className="flex gap-2 flex-shrink-0">
               <button className="icon-btn" onClick={() => setModal('report')} aria-label="بلّغ">🚩</button>
               <button className="icon-btn" onClick={() => setModal('block')} aria-label="حظر">🚫</button>
@@ -300,8 +303,8 @@ export default function ChatPage() {
 
         {/* ── Messages area ─────────────────────────────────────────────── */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
-          {/* Blocked banner */}
-          {isBlocked && (
+          {/* Blocked banner — only recipient can block, so only show in recipient view */}
+          {isRecipientView && isBlocked && (
             <div className="mx-4 mt-3 p-[12px_16px] rounded-[14px] border-[2.5px] border-[var(--omg-red)] text-[13px] text-[var(--omg-red)] font-bold text-center"
               style={{ background: '#FFF0F0', boxShadow: '3px 3px 0 var(--omg-red)' }}>
               🚫 حظرت المرسل ده — مش هيقدر يبعتلك تاني
@@ -333,8 +336,10 @@ export default function ChatPage() {
 
           <div className="flex flex-col gap-[14px] p-4 pb-2">
             {messages.map((msg) => {
-              const isMe = msg.authorRole === 'recipient';
+              const isMe = msg.isMine;
               const reactions = getMessageReactions(msg);
+              // Reactions/quick-react only available to recipient on messages from the sender
+              const canReact = isRecipientView && !isMe && !isBlocked;
               return (
                 <div
                   key={msg.id}
@@ -350,10 +355,10 @@ export default function ChatPage() {
                     seen={isMe && !!msg.seenAt}
                     avatarEmoji={isMe ? undefined : msg.displayName.slice(0, 1)}
                     reactions={reactions}
-                    onReact={!isMe && !isBlocked ? (emoji) => handleReact(msg.id, emoji) : undefined}
+                    onReact={canReact ? (emoji) => handleReact(msg.id, emoji) : undefined}
                   />
-                  {/* Quick-react strip — only on anonymous messages, only if not blocked */}
-                  {!isMe && !isBlocked && (
+                  {/* Quick-react strip — recipient only, on incoming anonymous messages */}
+                  {canReact && (
                     <div className="flex gap-2 mt-2 mr-[44px] flex-wrap">
                       {QUICK_EMOJIS.map((e) => (
                         <button
@@ -386,13 +391,14 @@ export default function ChatPage() {
             </div>
           )}
 
-          {!isBlocked ? (
+          {/* Sender always sees composer (block is silently enforced server-side) */}
+          {(!isRecipientView || !isBlocked) ? (
             <div className="flex gap-[10px] items-end px-4 pt-3">
               <textarea
                 ref={inputRef}
                 className="flex-1 bg-[var(--omg-bg)] border-[3px] border-[var(--omg-ink)] rounded-[20px] px-[16px] py-[11px] text-[15px] font-cairo outline-none text-[var(--omg-text)] resize-none min-h-[48px] max-h-[120px] leading-[1.5]"
                 style={{ boxShadow: '3px 3px 0 var(--omg-ink)' }}
-                placeholder="اكتب ردك هنا..."
+                placeholder={isRecipientView ? 'اكتب ردك هنا...' : 'أرسل رسالة مجهولة...'}
                 dir="rtl"
                 value={reply}
                 rows={1}
@@ -420,6 +426,7 @@ export default function ChatPage() {
               </button>
             </div>
           ) : (
+            /* Recipient blocked the thread — show unblock option */
             <div className="flex gap-2 justify-center px-4 pt-3">
               <OMGButton
                 variant="white"

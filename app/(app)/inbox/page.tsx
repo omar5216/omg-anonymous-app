@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { threadsApi } from '@/lib/api/client';
 import { ApiError } from '@/lib/api/types';
 import type { ThreadSummaryDto, SentThreadSummaryDto } from '@/lib/api/types';
@@ -101,7 +101,10 @@ function SentThreadCard({ thread, index, onClick }: { thread: SentThreadSummaryD
 
 export default function InboxPage() {
   const router = useRouter();
-  const [tab, setTab] = useState<'received' | 'sent'>('received');
+  const searchParams = useSearchParams();
+  const [tab, setTab] = useState<'received' | 'sent'>(
+    searchParams.get('tab') === 'sent' ? 'sent' : 'received',
+  );
 
   // Received tab state
   const [threads, setThreads] = useState<ThreadSummaryDto[]>([]);
@@ -164,6 +167,9 @@ export default function InboxPage() {
   }, [router]);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    if (tab === 'sent' && !sentLoaded) loadSent();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleTabChange(t: 'received' | 'sent') {
     setTab(t);

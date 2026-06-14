@@ -93,6 +93,8 @@ export interface ThreadDetailDto {
   isArchived: boolean;
   isBlocked: boolean;
   createdAt: string;
+  /** 'recipient' = link owner viewing their inbox; 'sender' = anonymous sender viewing their sent thread */
+  viewerRole: 'recipient' | 'sender';
 }
 
 export interface SendAnonymousMessageDto {
@@ -114,6 +116,8 @@ export interface MessageDto {
   authorRole: MessageAuthorRole;
   /** The alias name for the sender role, or display name for the recipient */
   displayName: string;
+  /** True if this message was authored by the requesting user */
+  isMine: boolean;
   content: string;
   contentType: 'text';
   sentAt: string;
