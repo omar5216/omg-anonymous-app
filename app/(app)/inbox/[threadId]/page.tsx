@@ -47,7 +47,9 @@ export default function ChatPage() {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
 
-  const [modal, setModal] = useState<'block' | 'report' | 'blocked-confirm' | null>(null);
+  const [modal, setModal] = useState<'block' | 'report' | 'blocked-confirm' | 'share-card' | null>(null);
+  const [selectedMsg, setSelectedMsg] = useState<MessageDto | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [reportStep, setReportStep] = useState<'pick' | 'done'>('pick');
   const [blocking, setBlocking] = useState(false);
   const [reporting, setReporting] = useState(false);
@@ -209,6 +211,20 @@ export default function ChatPage() {
     }
   }
 
+  function startLongPress(msg: MessageDto) {
+    longPressTimer.current = setTimeout(() => {
+      setSelectedMsg(msg);
+      setModal('share-card');
+    }, 500);
+  }
+
+  function cancelLongPress() {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }
+
   function getMessageReactions(msg: MessageDto) {
     const base = msg.reactions ?? {};
     const local = localReactions[msg.id] ?? {};
@@ -318,7 +334,13 @@ export default function ChatPage() {
               const isMe = msg.authorRole === 'recipient';
               const reactions = getMessageReactions(msg);
               return (
-                <div key={msg.id}>
+                <div
+                  key={msg.id}
+                  onTouchStart={() => startLongPress(msg)}
+                  onTouchEnd={cancelLongPress}
+                  onTouchMove={cancelLongPress}
+                  onContextMenu={(e) => { e.preventDefault(); setSelectedMsg(msg); setModal('share-card'); }}
+                >
                   <OMGChatBubble
                     role={isMe ? 'me' : 'them'}
                     content={msg.content}
@@ -416,6 +438,50 @@ export default function ChatPage() {
           )}
         </div>
       </FullscreenShell>
+
+      {/* ── Share as Card ─────────────────────────────────────────────── */}
+      <OMGModal isOpen={modal === 'share-card'} onClose={() => { setModal(null); setSelectedMsg(null); }} title="شارك الرسالة 🃏">
+        {selectedMsg && (
+          <>
+            <div
+              className="mb-5 p-4 rounded-[16px] border-[2.5px] border-[var(--omg-ink)] text-[14px] text-[var(--omg-ink)] leading-[1.7]"
+              style={{ background: 'var(--omg-bg)', boxShadow: '3px 3px 0 var(--omg-ink)' }}
+            >
+              {selectedMsg.content}
+            </div>
+            <OMGButton
+              variant="purple"
+              onClick={() => {
+                const appHost = typeof window !== 'undefined' ? window.location.origin : '';
+                const card = `💬 رسالة مجهولة وصلتني على OMG!\n\n"${selectedMsg.content}"\n\nابعت رسالتك المجهولة: ${appHost}`;
+                navigator.clipboard?.writeText(card).catch(() => {});
+                setModal(null);
+                setSelectedMsg(null);
+              }}
+              className="mb-2"
+            >
+              📋 نسخ كـ كارت
+            </OMGButton>
+            {typeof navigator !== 'undefined' && 'share' in navigator && (
+              <OMGButton
+                variant="yellow"
+                onClick={() => {
+                  const appHost = typeof window !== 'undefined' ? window.location.origin : '';
+                  navigator.share?.({
+                    text: `💬 رسالة مجهولة وصلتني على OMG!\n\n"${selectedMsg.content}"\n\nابعت رسالتك: ${appHost}`,
+                  }).catch(() => {});
+                  setModal(null);
+                  setSelectedMsg(null);
+                }}
+                className="mb-2"
+              >
+                📤 شارك
+              </OMGButton>
+            )}
+            <OMGButton variant="ghost" onClick={() => { setModal(null); setSelectedMsg(null); }}>إلغاء</OMGButton>
+          </>
+        )}
+      </OMGModal>
 
       {/* ── Block confirmation ─────────────────────────────────────────── */}
       <OMGModal isOpen={modal === 'block'} onClose={() => setModal(null)} title={`حظر ${thread.aliasName}؟`}>
