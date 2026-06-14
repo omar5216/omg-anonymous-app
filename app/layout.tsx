@@ -18,8 +18,9 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://omgksa.com'),
   title: 'OMG! Anonymous Chat',
-  description: 'Send and receive anonymous messages, open private chats, and share messages as cards.',
+  description: 'استقبل رسائل مجهولة، افتح شات خاص، وشارك الرسائل ككارت. مجاني 100%.',
   openGraph: {
     title: 'OMG! Anonymous Chat',
     description: 'استقبل رسائل مجهولة، افتح شات خاص، وشارك الرسائل ككارت.',
@@ -27,6 +28,20 @@ export const metadata: Metadata = {
     siteName: 'OMG!',
     locale: 'ar_SA',
     type: 'website',
+    images: [
+      {
+        url: 'https://omgksa.com/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: 'OMG! Anonymous Chat — استقبل رسائل مجهولة وافتح شات لو حبيت',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'OMG! Anonymous Chat',
+    description: 'استقبل رسائل مجهولة، افتح شات خاص، وشارك الرسائل ككارت.',
+    images: ['https://omgksa.com/opengraph-image'],
   },
 };
 
