@@ -10,6 +10,7 @@ import { OMGEmptyState, OMGShimmerList } from '@/components/omg/OMGEmptyState';
 import { OMGButton } from '@/components/omg/OMGButton';
 import { OMGSticker } from '@/components/omg/OMGSticker';
 import { OMGModal } from '@/components/omg/OMGModal';
+import { OMGShareCardExportModal } from '@/components/omg/OMGShareCardExportModal';
 
 const AVATAR_COLORS = ['var(--omg-purple)', 'var(--omg-pink)', 'var(--omg-yellow)'] as const;
 function avatarColor(i: number) { return AVATAR_COLORS[i % AVATAR_COLORS.length]; }
@@ -110,6 +111,7 @@ export default function InboxPage() {
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedThread, setSelectedThread] = useState<ThreadSummaryDto | null>(null);
+  const [shareCardThread, setShareCardThread] = useState<ThreadSummaryDto | null>(null);
 
   // Sent tab state
   const [sentThreads, setSentThreads] = useState<SentThreadSummaryDto[]>([]);
@@ -349,10 +351,7 @@ export default function InboxPage() {
           <OMGButton
             variant="purple"
             onClick={() => {
-              const text = selectedThread.lastMessagePreview ?? '';
-              const appHost = typeof window !== 'undefined' ? window.location.origin : '';
-              const card = `💬 رسالة مجهولة وصلتني على OMG!\n\n"${text}"\n\nابعت رسالتك المجهولة: ${appHost}`;
-              navigator.clipboard?.writeText(card).catch(() => {});
+              setShareCardThread(selectedThread);
               setSelectedThread(null);
             }}
             className="mb-2"
@@ -370,6 +369,14 @@ export default function InboxPage() {
           </OMGButton>
         </OMGModal>
       )}
+
+      {/* Share card image export modal */}
+      <OMGShareCardExportModal
+        isOpen={!!shareCardThread}
+        onClose={() => setShareCardThread(null)}
+        message={shareCardThread?.lastMessagePreview ?? ''}
+        aliasName={shareCardThread?.aliasName}
+      />
 
       <div className="fixed bottom-0 left-0 right-0 flex justify-center pointer-events-none z-50">
         <div className="w-full pointer-events-auto" style={{ maxWidth: 430 }}>

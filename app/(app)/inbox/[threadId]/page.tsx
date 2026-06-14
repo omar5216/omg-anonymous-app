@@ -11,6 +11,7 @@ import { OMGButton } from '@/components/omg/OMGButton';
 import { OMGSticker } from '@/components/omg/OMGSticker';
 import { OMGModal } from '@/components/omg/OMGModal';
 import { OMGEmptyState, OMGShimmerList } from '@/components/omg/OMGEmptyState';
+import { OMGShareCardExportModal } from '@/components/omg/OMGShareCardExportModal';
 
 const REPORT_REASONS: { value: CreateReportDto['reason']; ico: string; label: string }[] = [
   { value: 'harassment',    ico: '😰', label: 'تحرش أو تهديد' },
@@ -47,8 +48,9 @@ export default function ChatPage() {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
 
-  const [modal, setModal] = useState<'block' | 'report' | 'blocked-confirm' | 'share-card' | null>(null);
+  const [modal, setModal] = useState<'block' | 'report' | 'blocked-confirm' | null>(null);
   const [selectedMsg, setSelectedMsg] = useState<MessageDto | null>(null);
+  const [shareCardMsg, setShareCardMsg] = useState<MessageDto | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [reportStep, setReportStep] = useState<'pick' | 'done'>('pick');
   const [blocking, setBlocking] = useState(false);
@@ -214,7 +216,7 @@ export default function ChatPage() {
   function startLongPress(msg: MessageDto) {
     longPressTimer.current = setTimeout(() => {
       setSelectedMsg(msg);
-      setModal('share-card');
+      setShareCardMsg(msg);
     }, 500);
   }
 
@@ -339,7 +341,7 @@ export default function ChatPage() {
                   onTouchStart={() => startLongPress(msg)}
                   onTouchEnd={cancelLongPress}
                   onTouchMove={cancelLongPress}
-                  onContextMenu={(e) => { e.preventDefault(); setSelectedMsg(msg); setModal('share-card'); }}
+                  onContextMenu={(e) => { e.preventDefault(); setSelectedMsg(msg); setShareCardMsg(msg); }}
                 >
                   <OMGChatBubble
                     role={isMe ? 'me' : 'them'}
@@ -439,49 +441,13 @@ export default function ChatPage() {
         </div>
       </FullscreenShell>
 
-      {/* ── Share as Card ─────────────────────────────────────────────── */}
-      <OMGModal isOpen={modal === 'share-card'} onClose={() => { setModal(null); setSelectedMsg(null); }} title="شارك الرسالة 🃏">
-        {selectedMsg && (
-          <>
-            <div
-              className="mb-5 p-4 rounded-[16px] border-[2.5px] border-[var(--omg-ink)] text-[14px] text-[var(--omg-ink)] leading-[1.7]"
-              style={{ background: 'var(--omg-bg)', boxShadow: '3px 3px 0 var(--omg-ink)' }}
-            >
-              {selectedMsg.content}
-            </div>
-            <OMGButton
-              variant="purple"
-              onClick={() => {
-                const appHost = typeof window !== 'undefined' ? window.location.origin : '';
-                const card = `💬 رسالة مجهولة وصلتني على OMG!\n\n"${selectedMsg.content}"\n\nابعت رسالتك المجهولة: ${appHost}`;
-                navigator.clipboard?.writeText(card).catch(() => {});
-                setModal(null);
-                setSelectedMsg(null);
-              }}
-              className="mb-2"
-            >
-              📋 نسخ كـ كارت
-            </OMGButton>
-            {typeof navigator !== 'undefined' && 'share' in navigator && (
-              <OMGButton
-                variant="yellow"
-                onClick={() => {
-                  const appHost = typeof window !== 'undefined' ? window.location.origin : '';
-                  navigator.share?.({
-                    text: `💬 رسالة مجهولة وصلتني على OMG!\n\n"${selectedMsg.content}"\n\nابعت رسالتك: ${appHost}`,
-                  }).catch(() => {});
-                  setModal(null);
-                  setSelectedMsg(null);
-                }}
-                className="mb-2"
-              >
-                📤 شارك
-              </OMGButton>
-            )}
-            <OMGButton variant="ghost" onClick={() => { setModal(null); setSelectedMsg(null); }}>إلغاء</OMGButton>
-          </>
-        )}
-      </OMGModal>
+      {/* ── Share card image export ────────────────────────────────── */}
+      <OMGShareCardExportModal
+        isOpen={!!shareCardMsg}
+        onClose={() => { setShareCardMsg(null); setSelectedMsg(null); }}
+        message={shareCardMsg?.content ?? ''}
+        aliasName={thread?.aliasName}
+      />
 
       {/* ── Block confirmation ─────────────────────────────────────────── */}
       <OMGModal isOpen={modal === 'block'} onClose={() => setModal(null)} title={`حظر ${thread.aliasName}؟`}>
