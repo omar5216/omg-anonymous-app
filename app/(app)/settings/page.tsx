@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth';
+import { authApi } from '@/lib/api/client';
 import { OMGAvatar } from '@/components/omg/OMGAvatar';
 import { OMGButton } from '@/components/omg/OMGButton';
 import { OMGBottomNav } from '@/components/omg/OMGBottomNav';
@@ -42,6 +43,22 @@ export default function SettingsPage() {
   const { profile, logout } = useAuthStore();
   const [logoutModal, setLogoutModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await authApi.deleteAccount();
+      await logout();
+      router.replace('/register');
+    } catch {
+      setDeleteError('حصل مشكلة — حاول تاني أو تواصل مع الدعم');
+      setDeleting(false);
+    }
+  }
 
   async function handleLogout() {
     setLoggingOut(true);
@@ -116,6 +133,7 @@ export default function SettingsPage() {
             title="حذف حسابي نهائياً"
             subtitle="كل بياناتك ورسائلك هتتمسح"
             danger
+            onClick={() => setDeleteModal(true)}
           />
         </div>
       </div>
@@ -129,6 +147,22 @@ export default function SettingsPage() {
           <OMGBottomNav active="settings" />
         </div>
       </div>
+
+      {/* Delete account confirmation */}
+      <OMGModal isOpen={deleteModal} onClose={() => !deleting && setDeleteModal(false)} title="حذف الحساب نهائياً؟ 🗑️">
+        <p className="text-[14px] text-[var(--omg-muted)] mb-3 leading-[1.7]">
+          هذا الإجراء لا يمكن التراجع عنه. سيتم حذف حسابك وجميع رسائلك ومحادثاتك بشكل دائم.
+        </p>
+        {deleteError && (
+          <div className="mb-3 p-3 rounded-[14px] border-[2px] border-[var(--omg-red)] text-[12px] text-[var(--omg-red)] font-bold" style={{ background: '#FFF0F0' }}>
+            ⚠️ {deleteError}
+          </div>
+        )}
+        <OMGButton variant="ghost" disabled={deleting} onClick={handleDeleteAccount} className="mb-2 border-[var(--omg-red)] text-[var(--omg-red)]">
+          {deleting ? '⏳ جاري الحذف...' : '🗑️ أيوه، احذف حسابي'}
+        </OMGButton>
+        <OMGButton variant="purple" disabled={deleting} onClick={() => setDeleteModal(false)}>لأ، ارجع</OMGButton>
+      </OMGModal>
 
       {/* Logout confirmation */}
       <OMGModal isOpen={logoutModal} onClose={() => setLogoutModal(false)} title="تسجيل خروج؟">

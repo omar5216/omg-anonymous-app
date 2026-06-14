@@ -22,6 +22,7 @@ import type {
   PublicLinkDto,
   PublicLinkPublicDto,
   ThreadSummaryDto,
+  SentThreadSummaryDto,
   ThreadDetailDto,
   SendAnonymousMessageDto,
   SendResultDto,
@@ -107,6 +108,9 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify(dto),
     }),
+
+  deleteAccount: () =>
+    apiFetch<void>('/auth/account', { method: 'DELETE' }),
 };
 
 // ── profile ───────────────────────────────────────────────────────────────────
@@ -140,6 +144,11 @@ export const threadsApi = {
   list: (cursor?: string) => {
     const qs = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
     return apiFetch<PaginatedDto<ThreadSummaryDto>>(`/threads${qs}`);
+  },
+
+  listSent: (cursor?: string) => {
+    const qs = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+    return apiFetch<PaginatedDto<SentThreadSummaryDto>>(`/threads/sent${qs}`);
   },
 
   get: (threadId: string) =>

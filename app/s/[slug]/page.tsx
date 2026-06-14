@@ -141,7 +141,16 @@ export default function PublicSendPage() {
             <OMGButton variant="purple" onClick={() => { setContent(''); setScreen('compose'); }}>
               ابعت رسالة تانية 🔥
             </OMGButton>
-            {!accessToken && (
+            {accessToken ? (
+              <>
+                <OMGButton variant="yellow" onClick={() => router.push('/inbox')}>
+                  شوف محادثاتي المرسلة 📨
+                </OMGButton>
+                <OMGButton variant="white" onClick={() => router.push('/home')}>
+                  🏠 الرئيسية
+                </OMGButton>
+              </>
+            ) : (
               <Link href={`/register?returnTo=/s/${slug}`}>
                 <OMGButton variant="yellow">عمل حساب وشارك OMG! 👀</OMGButton>
               </Link>

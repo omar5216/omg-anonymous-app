@@ -74,6 +74,16 @@ export interface ThreadSummaryDto {
   messageCount: number;
   isArchived: boolean;
   createdAt: string;
+  lastMessagePreview: string | null;
+}
+
+export interface SentThreadSummaryDto {
+  threadId: string;
+  recipientName: string;
+  lastMessageAt: string | null;
+  messageCount: number;
+  createdAt: string;
+  lastMessagePreview: string | null;
 }
 
 export interface ThreadDetailDto {
