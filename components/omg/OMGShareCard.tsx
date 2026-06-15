@@ -1,17 +1,20 @@
 'use client';
 import { OMGSticker } from './OMGSticker';
 import { OMGButton } from './OMGButton';
+import { getAppOrigin } from '@/lib/utils/url';
 
 interface OMGShareCardProps {
   displayName: string;
   slug: string;
+  /** Bare hostname without protocol, e.g. "omgksa.com". Defaults to getAppOrigin(). */
   baseUrl?: string;
   onCopy?: () => void;
   onShare?: () => void;
 }
 
-export function OMGShareCard({ displayName, slug, baseUrl = 'omg.app', onCopy, onShare }: OMGShareCardProps) {
-  const shareUrl = `${baseUrl}/s/${slug}`;
+export function OMGShareCard({ displayName, slug, baseUrl, onCopy, onShare }: OMGShareCardProps) {
+  const host = baseUrl ?? getAppOrigin();
+  const shareUrl = `${host}/s/${slug}`;
 
   return (
     <div className="omg-card-hero">

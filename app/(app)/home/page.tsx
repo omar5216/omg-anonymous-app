@@ -12,11 +12,10 @@ import { OMGBottomNav } from '@/components/omg/OMGBottomNav';
 import { OMGEmptyState } from '@/components/omg/OMGEmptyState';
 import type { ProfileDto, PublicLinkDto } from '@/lib/api/types';
 import { ApiError } from '@/lib/api/types';
+import { getAppOrigin, buildPublicUrl } from '@/lib/utils/url';
 
 // TODO: backend does not return total message count on the home screen endpoint.
 // openedCount (link views) is available and shown. Add message count when backend exposes it.
-
-const APP_HOST = process.env.NEXT_PUBLIC_APP_HOST || 'omgksa.com';
 
 function Ticker() {
   const items = ['OMG!', 'ANONYMOUS', 'BOOM 💥', 'MYSTERY SENDER', 'WOW 🔥', 'مجهول تماماً'];
@@ -45,7 +44,7 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const shareUrl = link ? `https://${APP_HOST}/s/${link.slug}` : null;
+  const shareUrl = link ? buildPublicUrl(`/s/${link.slug}`) : null;
 
   const fetchData = useCallback(async () => {
     setError(null);
@@ -176,7 +175,7 @@ export default function HomePage() {
             <OMGShareCard
               displayName={profile.displayName}
               slug={link.slug}
-              baseUrl={`${APP_HOST}/s`}
+              baseUrl={getAppOrigin()}
               onCopy={handleCopy}
               onShare={handleShare}
             />

@@ -14,6 +14,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { OMGMessageShareCard } from './OMGMessageShareCard';
 import { OMGModal } from './OMGModal';
 import { OMGButton } from './OMGButton';
+import { getAppOrigin } from '@/lib/utils/url';
 
 interface OMGShareCardExportModalProps {
   isOpen: boolean;
@@ -24,10 +25,7 @@ interface OMGShareCardExportModalProps {
 
 type ExportState = 'rendering' | 'ready' | 'exporting' | 'error';
 
-const APP_URL =
-  typeof window !== 'undefined'
-    ? window.location.hostname
-    : 'omg-anonymous-app.vercel.app';
+const APP_URL = getAppOrigin();
 
 export function OMGShareCardExportModal({
   isOpen,
