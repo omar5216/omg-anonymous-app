@@ -75,6 +75,13 @@ function LoginForm() {
         <OMGInput label="كلمة السر" placeholder="••••••••" type="password" dir="ltr"
           value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
 
+        <div className="flex justify-end mb-2">
+          <Link href="/forgot-password"
+            className="text-[13px] font-bold text-[var(--omg-purple)] hover:underline">
+            نسيت كلمة السر؟
+          </Link>
+        </div>
+
         {error && (
           <div className="mb-4 p-[12px_16px] rounded-[14px] border-[2.5px] border-[var(--omg-red)] text-[13px] text-[var(--omg-red)] font-bold"
             style={{ background: '#FFF0F0', boxShadow: '3px 3px 0 var(--omg-red)' }}>
