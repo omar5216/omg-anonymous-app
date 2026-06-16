@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         type: 'website',
         images: [
           {
-            url: 'https://omgksa.com/opengraph-image',
+            url: `https://omgksa.com/s/${slug}/opengraph-image`,
             width: 1200,
             height: 630,
             alt: `OMG! Anonymous Chat — ابعت رسالة مجهولة لـ ${name}`,
@@ -50,7 +50,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         card: 'summary_large_image',
         title,
         description,
-        images: ['https://omgksa.com/opengraph-image'],
+        images: [`https://omgksa.com/s/${slug}/opengraph-image`],
       },
     };
   } catch {
@@ -60,11 +60,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       openGraph: {
         title: 'OMG! Anonymous Chat',
         description: 'ابعت رسالة مجهولة وافتح شات لو حبيت',
-        images: [{ url: 'https://omgksa.com/opengraph-image', width: 1200, height: 630 }],
+        images: [{ url: `https://omgksa.com/s/${slug}/opengraph-image`, width: 1200, height: 630 }],
       },
       twitter: {
         card: 'summary_large_image',
-        images: ['https://omgksa.com/opengraph-image'],
+        images: [`https://omgksa.com/s/${slug}/opengraph-image`],
       },
     };
   }

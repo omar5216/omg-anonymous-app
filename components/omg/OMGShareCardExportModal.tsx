@@ -53,7 +53,7 @@ export function OMGShareCardExportModal({
       const { toPng } = await import('html-to-image');
       const dataUrl = await toPng(cardRef.current, {
         width: 1080,
-        height: 1350,
+        height: 1080,
         pixelRatio: 1,
         skipFonts: false,
         cacheBust: true,
@@ -138,7 +138,7 @@ export function OMGShareCardExportModal({
             top: 0,
             left: '-9999px',
             width: 1080,
-            height: 1350,
+            height: 1080,
             pointerEvents: 'none',
             zIndex: -1,
           }}
@@ -196,7 +196,7 @@ export function OMGShareCardExportModal({
               <img
                 src={pngUrl}
                 alt="OMG Message Card Preview"
-                style={{ width: '100%', display: 'block', aspectRatio: '1080/1350' }}
+                style={{ width: '100%', display: 'block', aspectRatio: '1/1' }}
               />
             </div>
 
