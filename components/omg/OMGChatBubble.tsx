@@ -24,7 +24,7 @@ export function OMGChatBubble({ role, content, time, seen, reactions, avatarEmoj
           {avatarEmoji}
         </div>
       )}
-      <div>
+      <div className="omg-bubble-wrap">
         <div className={`omg-bubble ${isMe ? 'omg-bubble-me' : 'omg-bubble-them'}`}>
           {content}
         </div>

@@ -179,15 +179,28 @@ body {
    CHAT BUBBLES
 ═══════════════════════════════════════════════════ */
 .omg-bubble {
-  max-width: 72%;
+  /* max-width lives on the .omg-bubble-wrap container so % anchors to the row */
   padding: 11px 16px;
   font-size: 14px;
   line-height: 1.55;
   font-family: 'Cairo', sans-serif;
   border: 2.5px solid var(--omg-ink);
+  /* text wrapping — critical for long Arabic / mixed content */
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  /* RTL alignment for Arabic */
+  direction: rtl;
+  text-align: right;
 }
 .omg-bubble-them { background: var(--omg-card); border-radius: 18px 18px 18px 4px; color: var(--omg-ink); box-shadow: 3px 3px 0px var(--omg-ink); }
 .omg-bubble-me   { background: var(--omg-purple); color: #fff; border-radius: 18px 18px 4px 18px; box-shadow: 3px 3px 0px var(--omg-ink); }
+
+/* Container that limits bubble + metadata to 72% of the chat row */
+.omg-bubble-wrap {
+  min-width: 0;        /* allow flex child to shrink */
+  max-width: 72%;      /* cap relative to the outer flex row */
+}
 
 /* ═══════════════════════════════════════════════════
    BOTTOM SHEET / MODAL
