@@ -11,6 +11,8 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
 
+  const ogImageUrl = `https://omgksa.com/api/og?slug=${slug}&v=4`;
+
   try {
     const res = await fetch(`${API_BASE}/links/${slug}`, {
       next: { revalidate: 3600 },
@@ -39,9 +41,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         type: 'website',
         images: [
           {
-            url: `https://omgksa.com/s/${slug}/opengraph-image`,
+            url: ogImageUrl,
             width: 1200,
             height: 630,
+            type: 'image/png',
             alt: `OMG! Anonymous Chat — ابعت رسالة مجهولة لـ ${name}`,
           },
         ],
@@ -50,21 +53,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         card: 'summary_large_image',
         title,
         description,
-        images: [`https://omgksa.com/s/${slug}/opengraph-image`],
+        images: [ogImageUrl],
       },
     };
   } catch {
+    const ogImageFallback = `https://omgksa.com/api/og?v=4`;
     return {
       title: 'OMG! Anonymous Chat',
       description: 'ابعت رسالة مجهولة وافتح شات لو حبيت',
       openGraph: {
         title: 'OMG! Anonymous Chat',
         description: 'ابعت رسالة مجهولة وافتح شات لو حبيت',
-        images: [{ url: `https://omgksa.com/s/${slug}/opengraph-image`, width: 1200, height: 630 }],
+        url: `https://omgksa.com/s/${slug}`,
+        siteName: 'OMG!',
+        type: 'website',
+        images: [{ url: ogImageFallback, width: 1200, height: 630, type: 'image/png' }],
       },
       twitter: {
         card: 'summary_large_image',
-        images: [`https://omgksa.com/s/${slug}/opengraph-image`],
+        images: [ogImageFallback],
       },
     };
   }

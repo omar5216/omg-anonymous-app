@@ -30,9 +30,10 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://omgksa.com/opengraph-image',
+        url: 'https://omgksa.com/api/og?v=4',
         width: 1200,
         height: 630,
+        type: 'image/png',
         alt: 'OMG! Anonymous Chat — استقبل رسائل مجهولة وافتح شات لو حبيت',
       },
     ],
@@ -41,7 +42,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'OMG! Anonymous Chat',
     description: 'استقبل رسائل مجهولة، افتح شات خاص، وشارك الرسائل ككارت.',
-    images: ['https://omgksa.com/opengraph-image'],
+    images: ['https://omgksa.com/api/og?v=4'],
   },
 };
 
