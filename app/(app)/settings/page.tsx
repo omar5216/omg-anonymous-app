@@ -1,13 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth';
-import { authApi } from '@/lib/api/client';
+import { authApi, profileApi } from '@/lib/api/client';
 import { OMGAvatar } from '@/components/omg/OMGAvatar';
 import { OMGButton } from '@/components/omg/OMGButton';
 import { OMGBottomNav } from '@/components/omg/OMGBottomNav';
 import { OMGModal } from '@/components/omg/OMGModal';
+
+const NAME_MIN = 2;
+const NAME_MAX = 40;
 
 function SettingsRow({ ico, title, subtitle, onClick, danger }: {
   ico: string; title: string; subtitle?: string; onClick?: () => void; danger?: boolean;
@@ -40,12 +43,54 @@ function GroupLabel({ label }: { label: string }) {
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { profile, logout } = useAuthStore();
+  const { profile, logout, setProfile } = useAuthStore();
   const [logoutModal, setLogoutModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // ── Edit name state ────────────────────────────────────────────────────────
+  const [editNameModal, setEditNameModal] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+  const [nameSaving, setNameSaving] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [nameSuccess, setNameSuccess] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  function openEditName() {
+    setNameInput(profile?.displayName ?? '');
+    setNameError(null);
+    setNameSuccess(false);
+    setEditNameModal(true);
+  }
+
+  function validateName(v: string): string | null {
+    const trimmed = v.trim();
+    if (!trimmed) return 'الاسم مطلوب';
+    if (trimmed.length < NAME_MIN) return `الاسم قصير جداً — ${NAME_MIN} أحرف على الأقل`;
+    if (trimmed.length > NAME_MAX) return `الاسم طويل جداً — ${NAME_MAX} حرف كحد أقصى`;
+    return null;
+  }
+
+  async function handleSaveName() {
+    const trimmed = nameInput.trim();
+    const err = validateName(trimmed);
+    if (err) { setNameError(err); return; }
+
+    setNameSaving(true);
+    setNameError(null);
+    try {
+      const updated = await profileApi.update({ displayName: trimmed });
+      setProfile(updated);
+      setNameSuccess(true);
+      setTimeout(() => setEditNameModal(false), 800);
+    } catch {
+      setNameError('مش قدرنا نحدّث الاسم — حاول تاني');
+    } finally {
+      setNameSaving(false);
+    }
+  }
 
   async function handleDeleteAccount() {
     setDeleting(true);
@@ -97,6 +142,7 @@ export default function SettingsPage() {
           ico="✏️"
           title="تعديل الاسم"
           subtitle={profile?.displayName}
+          onClick={openEditName}
         />
       </div>
 
@@ -173,6 +219,61 @@ export default function SettingsPage() {
           {loggingOut ? '⏳ جاري الخروج...' : '🚪 أيوه، اخرجني'}
         </OMGButton>
         <OMGButton variant="purple" onClick={() => setLogoutModal(false)}>لأ، ابقى فيه</OMGButton>
+      </OMGModal>
+
+      {/* Edit name */}
+      <OMGModal
+        isOpen={editNameModal}
+        onClose={() => !nameSaving && setEditNameModal(false)}
+        title="تعديل الاسم ✏️"
+        subtitle="الاسم اللي بيظهر في حسابك"
+      >
+        {nameSuccess ? (
+          <div className="text-center py-4">
+            <div className="text-[48px] mb-3">✅</div>
+            <div className="font-grotesk text-[18px] font-black text-[var(--omg-ink)]">
+              اتحدّث الاسم!
+            </div>
+          </div>
+        ) : (
+          <>
+            <input
+              ref={nameInputRef}
+              type="text"
+              value={nameInput}
+              onChange={(e) => { setNameInput(e.target.value); setNameError(null); }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !nameSaving) handleSaveName(); }}
+              placeholder="اسمك هنا..."
+              dir="rtl"
+              maxLength={NAME_MAX}
+              disabled={nameSaving}
+              className="w-full bg-[var(--omg-bg)] border-[3px] border-[var(--omg-ink)] rounded-[16px] px-4 py-[13px] text-[16px] font-cairo text-[var(--omg-ink)] outline-none mb-1"
+              style={{ boxShadow: '3px 3px 0 var(--omg-ink)' }}
+              autoFocus
+            />
+            <div className="flex justify-between items-center mb-4">
+              {nameError ? (
+                <span className="text-[12px] text-[var(--omg-red)] font-bold">⚠️ {nameError}</span>
+              ) : (
+                <span />
+              )}
+              <span className="text-[11px] text-[var(--omg-muted)] font-bold">
+                {nameInput.trim().length}/{NAME_MAX}
+              </span>
+            </div>
+            <OMGButton
+              variant="purple"
+              disabled={nameSaving || !nameInput.trim()}
+              onClick={handleSaveName}
+              className="mb-2"
+            >
+              {nameSaving ? '⏳ جاري الحفظ...' : '💾 حفظ الاسم'}
+            </OMGButton>
+            <OMGButton variant="ghost" disabled={nameSaving} onClick={() => setEditNameModal(false)}>
+              إلغاء
+            </OMGButton>
+          </>
+        )}
       </OMGModal>
     </div>
   );
