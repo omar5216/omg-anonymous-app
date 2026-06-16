@@ -11,7 +11,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { OMGMessageShareCard } from './OMGMessageShareCard';
+import { OMGMessageShareCard, CARD_WIDTH, CARD_HEIGHT } from './OMGMessageShareCard';
 import { OMGModal } from './OMGModal';
 import { OMGButton } from './OMGButton';
 import { getAppOrigin } from '@/lib/utils/url';
@@ -52,8 +52,8 @@ export function OMGShareCardExportModal({
     try {
       const { toPng } = await import('html-to-image');
       const dataUrl = await toPng(cardRef.current, {
-        width: 1080,
-        height: 1080,
+        width: CARD_WIDTH,
+        height: CARD_HEIGHT,
         pixelRatio: 1,
         skipFonts: false,
         cacheBust: true,
@@ -137,8 +137,8 @@ export function OMGShareCardExportModal({
             position: 'fixed',
             top: 0,
             left: '-9999px',
-            width: 1080,
-            height: 1080,
+            width: CARD_WIDTH,
+            height: CARD_HEIGHT,
             pointerEvents: 'none',
             zIndex: -1,
           }}
@@ -196,7 +196,7 @@ export function OMGShareCardExportModal({
               <img
                 src={pngUrl}
                 alt="OMG Message Card Preview"
-                style={{ width: '100%', display: 'block', aspectRatio: '1/1' }}
+                style={{ width: '100%', display: 'block', aspectRatio: `${CARD_WIDTH}/${CARD_HEIGHT}` }}
               />
             </div>
 

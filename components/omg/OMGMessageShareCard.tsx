@@ -1,5 +1,5 @@
 /**
- * OMGMessageShareCard — off-screen 1080×1350 poster rendered for PNG export.
+ * OMGMessageShareCard — off-screen 1200×876 poster rendered for PNG export.
  *
  * Rendered inside a hidden div; caller uses html-to-image to capture it.
  * All styles are inline (no Tailwind classes) because html-to-image clones
@@ -17,6 +17,9 @@ const COLORS = {
   muted:  '#6B6B6B',
 };
 
+export const CARD_WIDTH  = 1200;
+export const CARD_HEIGHT = 876;
+
 interface OMGMessageShareCardProps {
   message: string;
   /** Optional anonymous alias (e.g. "Brave Eagle") */
@@ -26,16 +29,15 @@ interface OMGMessageShareCardProps {
 }
 
 export const OMGMessageShareCard = React.forwardRef<HTMLDivElement, OMGMessageShareCardProps>(
-  function OMGMessageShareCard({ message, aliasName, appUrl = 'omg-anonymous-app.vercel.app' }, ref) {
-    const isLong = message.length > 180;
-    const fontSize = isLong ? 38 : message.length > 80 ? 48 : 58;
+  function OMGMessageShareCard({ message, aliasName, appUrl = 'omgksa.com' }, ref) {
+    const fontSize = message.length > 180 ? 34 : message.length > 80 ? 42 : 50;
 
     return (
       <div
         ref={ref}
         style={{
-          width: 1080,
-          height: 1080,
+          width: CARD_WIDTH,
+          height: CARD_HEIGHT,
           background: COLORS.bg,
           display: 'flex',
           flexDirection: 'column',
@@ -45,7 +47,7 @@ export const OMGMessageShareCard = React.forwardRef<HTMLDivElement, OMGMessageSh
           overflow: 'hidden',
         }}
       >
-        {/* Square grid lines background */}
+        {/* Grid background */}
         <div style={{
           position: 'absolute',
           inset: 0,
@@ -54,25 +56,25 @@ export const OMGMessageShareCard = React.forwardRef<HTMLDivElement, OMGMessageSh
           pointerEvents: 'none',
         }} />
 
-        {/* Top decorative blobs */}
+        {/* Decorative blobs */}
         <div style={{
           position: 'absolute',
-          top: -60,
-          right: -60,
-          width: 300,
-          height: 300,
+          top: -50,
+          right: -50,
+          width: 260,
+          height: 260,
           borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(123,47,255,0.18) 0%, transparent 70%)',
           pointerEvents: 'none',
         }} />
         <div style={{
           position: 'absolute',
-          bottom: 100,
-          left: -80,
-          width: 280,
-          height: 280,
+          bottom: 60,
+          left: -60,
+          width: 220,
+          height: 220,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,110,176,0.18) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(255,110,176,0.16) 0%, transparent 70%)',
           pointerEvents: 'none',
         }} />
 
@@ -81,25 +83,25 @@ export const OMGMessageShareCard = React.forwardRef<HTMLDivElement, OMGMessageSh
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '40px 64px 20px',
+          padding: '32px 64px 14px',
           position: 'relative',
           zIndex: 1,
+          flexShrink: 0,
         }}>
           {/* Brand pill */}
           <div style={{
             background: COLORS.purple,
             border: `4px solid ${COLORS.ink}`,
             borderRadius: 100,
-            padding: '14px 36px',
+            padding: '10px 32px',
             boxShadow: `5px 5px 0 ${COLORS.ink}`,
             display: 'flex',
             alignItems: 'center',
-            gap: 12,
           }}>
             <span style={{
               fontFamily: "'Space Grotesk', 'Arial', sans-serif",
               fontWeight: 900,
-              fontSize: 38,
+              fontSize: 34,
               color: '#fff',
               letterSpacing: '-1px',
             }}>OMG!</span>
@@ -110,13 +112,13 @@ export const OMGMessageShareCard = React.forwardRef<HTMLDivElement, OMGMessageSh
             background: COLORS.yellow,
             border: `4px solid ${COLORS.ink}`,
             borderRadius: 100,
-            padding: '14px 30px',
+            padding: '10px 26px',
             boxShadow: `5px 5px 0 ${COLORS.ink}`,
           }}>
             <span style={{
               fontFamily: "'Space Grotesk', 'Arial', sans-serif",
               fontWeight: 900,
-              fontSize: 24,
+              fontSize: 20,
               color: COLORS.ink,
               letterSpacing: '1px',
             }}>ANONYMOUS</span>
@@ -125,14 +127,15 @@ export const OMGMessageShareCard = React.forwardRef<HTMLDivElement, OMGMessageSh
 
         {/* ── TITLE BAND ── */}
         <div style={{
-          padding: '0 64px 16px',
+          padding: '0 64px 10px',
           position: 'relative',
           zIndex: 1,
+          flexShrink: 0,
         }}>
           <div style={{
             fontFamily: "'Cairo', 'Arial', sans-serif",
             fontWeight: 900,
-            fontSize: 36,
+            fontSize: 28,
             color: COLORS.muted,
             letterSpacing: '2px',
             textTransform: 'uppercase',
@@ -143,9 +146,9 @@ export const OMGMessageShareCard = React.forwardRef<HTMLDivElement, OMGMessageSh
             <div style={{
               fontFamily: "'Cairo', 'Arial', sans-serif",
               fontWeight: 700,
-              fontSize: 28,
+              fontSize: 22,
               color: COLORS.purple,
-              marginTop: 8,
+              marginTop: 4,
             }}>
               من: {aliasName}
             </div>
@@ -160,25 +163,26 @@ export const OMGMessageShareCard = React.forwardRef<HTMLDivElement, OMGMessageSh
           alignItems: 'center',
           position: 'relative',
           zIndex: 1,
+          minHeight: 0,
         }}>
           <div style={{
             width: '100%',
             background: COLORS.card,
             border: `5px solid ${COLORS.ink}`,
-            borderRadius: 40,
-            padding: '40px 48px',
+            borderRadius: 32,
+            padding: '36px 48px',
             boxShadow: `10px 10px 0 ${COLORS.ink}`,
             position: 'relative',
           }}>
-            {/* Quote marks decoration */}
+            {/* Quote decoration */}
             <div style={{
               position: 'absolute',
-              top: 24,
-              right: 44,
+              top: 16,
+              right: 40,
               fontFamily: 'Georgia, serif',
-              fontSize: 120,
+              fontSize: 100,
               color: COLORS.purple,
-              opacity: 0.12,
+              opacity: 0.10,
               lineHeight: 1,
               userSelect: 'none',
             }}>
@@ -190,7 +194,7 @@ export const OMGMessageShareCard = React.forwardRef<HTMLDivElement, OMGMessageSh
               fontWeight: 800,
               fontSize: fontSize,
               color: COLORS.ink,
-              lineHeight: 1.55,
+              lineHeight: 1.6,
               direction: 'rtl',
               textAlign: 'right',
               wordBreak: 'break-word',
@@ -205,35 +209,36 @@ export const OMGMessageShareCard = React.forwardRef<HTMLDivElement, OMGMessageSh
 
         {/* ── FOOTER ── */}
         <div style={{
-          padding: '24px 64px 36px',
+          padding: '14px 64px 28px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           position: 'relative',
           zIndex: 1,
+          flexShrink: 0,
         }}>
           <div style={{
             fontFamily: "'Space Grotesk', 'Arial', sans-serif",
             fontWeight: 700,
-            fontSize: 26,
+            fontSize: 22,
             color: COLORS.muted,
           }}>
             {appUrl}
           </div>
 
-          {/* OMG sticker */}
+          {/* Sticker */}
           <div style={{
             background: COLORS.yellow,
             border: `4px solid ${COLORS.ink}`,
-            borderRadius: 16,
-            padding: '12px 24px',
+            borderRadius: 14,
+            padding: '10px 20px',
             boxShadow: `4px 4px 0 ${COLORS.ink}`,
             transform: 'rotate(-2deg)',
           }}>
             <span style={{
               fontFamily: "'Cairo', 'Arial', sans-serif",
               fontWeight: 900,
-              fontSize: 28,
+              fontSize: 24,
               color: COLORS.ink,
             }}>
               🔒 بعت رسالتك!
