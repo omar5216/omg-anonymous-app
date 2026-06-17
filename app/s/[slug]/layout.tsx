@@ -4,14 +4,16 @@ const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ??
   'https://omg-backend-v2-production.up.railway.app/api/v1';
 
+// Static image — no edge function, no API call, always 200 instantly.
+// Version query busts any previous bad cache on Twitter/Facebook.
+const STATIC_OG_IMAGE = 'https://omgksa.com/og-link-preview.png?v=5';
+
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-
-  const ogImageUrl = `https://omgksa.com/api/og?slug=${slug}&v=4`;
 
   try {
     const res = await fetch(`${API_BASE}/links/${slug}`, {
@@ -41,11 +43,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         type: 'website',
         images: [
           {
-            url: ogImageUrl,
+            url: STATIC_OG_IMAGE,
             width: 1200,
             height: 630,
             type: 'image/png',
-            alt: `OMG! Anonymous Chat — ابعت رسالة مجهولة لـ ${name}`,
+            alt: 'OMG Anonymous Chat',
           },
         ],
       },
@@ -53,25 +55,34 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         card: 'summary_large_image',
         title,
         description,
-        images: [ogImageUrl],
+        images: [STATIC_OG_IMAGE],
       },
     };
   } catch {
-    const ogImageFallback = `https://omgksa.com/api/og?v=4`;
     return {
       title: 'OMG! Anonymous Chat',
-      description: 'ابعت رسالة مجهولة وافتح شات لو حبيت',
+      description: 'ابعتلي رسالة مجهولة 👀',
       openGraph: {
         title: 'OMG! Anonymous Chat',
-        description: 'ابعت رسالة مجهولة وافتح شات لو حبيت',
+        description: 'ابعتلي رسالة مجهولة 👀',
         url: `https://omgksa.com/s/${slug}`,
         siteName: 'OMG!',
         type: 'website',
-        images: [{ url: ogImageFallback, width: 1200, height: 630, type: 'image/png' }],
+        images: [
+          {
+            url: STATIC_OG_IMAGE,
+            width: 1200,
+            height: 630,
+            type: 'image/png',
+            alt: 'OMG Anonymous Chat',
+          },
+        ],
       },
       twitter: {
         card: 'summary_large_image',
-        images: [ogImageFallback],
+        title: 'OMG! Anonymous Chat',
+        description: 'ابعتلي رسالة مجهولة 👀',
+        images: [STATIC_OG_IMAGE],
       },
     };
   }
