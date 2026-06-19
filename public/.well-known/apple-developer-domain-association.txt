@@ -1,0 +1,10 @@
+# PLACEHOLDER — replace with the real file downloaded from Apple Developer.
+#
+# Steps:
+# 1. Go to Apple Developer → Certificates, IDs & Profiles → your Services ID → Configure.
+# 2. Click "Download" next to "Domain Verification".
+# 3. Replace this entire file with the downloaded content.
+# 4. Deploy — Apple will verify https://omgksa.com/.well-known/apple-developer-domain-association.txt
+#
+# The file must be served without redirects, without auth, and over HTTPS in production.
+# Next.js serves everything in /public/ automatically at the matching path.

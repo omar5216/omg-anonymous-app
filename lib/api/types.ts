@@ -26,6 +26,13 @@ export interface RefreshTokenDto {
   refreshToken: string;
 }
 
+export type OAuthProvider = 'google' | 'apple';
+
+export interface OauthDto {
+  provider: OAuthProvider;
+  idToken: string;
+}
+
 // ─── Profile ────────────────────────────────────────────────────────────────
 
 export interface ProfileDto {

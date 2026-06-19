@@ -1,7 +1,12 @@
 import type { Metadata } from 'next';
 import { Cairo, Space_Grotesk } from 'next/font/google';
+import Script from 'next/script';
 import { AuthProvider } from '@/components/omg/AuthProvider';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import './globals.css';
+
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
+const APPLE_CLIENT_ID = process.env.NEXT_PUBLIC_APPLE_CLIENT_ID ?? '';
 
 const cairo = Cairo({
   subsets: ['arabic', 'latin'],
@@ -46,6 +51,13 @@ export const metadata: Metadata = {
   },
 };
 
+// GoogleOAuthProvider requires a non-empty clientId to initialise correctly.
+// When the env var is absent we wrap with a noop fragment instead.
+function MaybeGoogleProvider({ children }: { children: React.ReactNode }) {
+  if (!GOOGLE_CLIENT_ID) return <>{children}</>;
+  return <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>{children}</GoogleOAuthProvider>;
+}
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ar" dir="rtl" className={`${cairo.variable} ${spaceGrotesk.variable}`}>
@@ -56,7 +68,17 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         className="omg-grid-bg min-h-screen"
         style={{ fontFamily: "var(--font-cairo), 'Cairo', system-ui, sans-serif" }}
       >
-        <AuthProvider>{children}</AuthProvider>
+        <MaybeGoogleProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </MaybeGoogleProvider>
+
+        {/* Apple Sign In JS SDK — loaded lazily only when Apple is configured */}
+        {APPLE_CLIENT_ID && (
+          <Script
+            src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"
+            strategy="lazyOnload"
+          />
+        )}
       </body>
     </html>
   );

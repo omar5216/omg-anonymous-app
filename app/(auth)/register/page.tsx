@@ -9,6 +9,7 @@ import { OMGSticker } from '@/components/omg/OMGSticker';
 import { authApi, profileApi } from '@/lib/api/client';
 import { useAuthStore } from '@/lib/store/auth';
 import { ApiError } from '@/lib/api/types';
+import { SocialLoginButtons } from '@/components/omg/SocialLoginButtons';
 
 function RegisterForm() {
   const router = useRouter();
@@ -97,7 +98,9 @@ function RegisterForm() {
         </OMGButton>
       </form>
 
-      <div className="relative z-10">
+      <SocialLoginButtons returnTo={returnTo} />
+
+      <div className="relative z-10 mt-4">
         <Link href={`/login${returnTo !== '/home' ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`}>
           <OMGButton variant="white" size="sm">عندي حساب — ادخل</OMGButton>
         </Link>
