@@ -54,7 +54,7 @@ export function OMGShareCardExportModal({
       const dataUrl = await toPng(cardRef.current, {
         width: CARD_WIDTH,
         height: CARD_HEIGHT,
-        pixelRatio: 1,
+        pixelRatio: 2,
         skipFonts: false,
         cacheBust: true,
         style: {

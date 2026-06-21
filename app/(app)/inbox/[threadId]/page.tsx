@@ -12,6 +12,7 @@ import { OMGSticker } from '@/components/omg/OMGSticker';
 import { OMGModal } from '@/components/omg/OMGModal';
 import { OMGEmptyState, OMGShimmerList } from '@/components/omg/OMGEmptyState';
 import { OMGShareCardExportModal } from '@/components/omg/OMGShareCardExportModal';
+import { OMGMessageMenu, type MenuAnchor } from '@/components/omg/OMGMessageMenu';
 
 const REPORT_REASONS: { value: CreateReportDto['reason']; ico: string; label: string }[] = [
   { value: 'harassment',    ico: '😰', label: 'تحرش أو تهديد' },
@@ -37,7 +38,6 @@ export default function ChatPage() {
   const router = useRouter();
 
   const [thread, setThread] = useState<ThreadDetailDto | null>(null);
-  // messages stored oldest-first (display order)
   const [messages, setMessages] = useState<MessageDto[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,16 +49,26 @@ export default function ChatPage() {
   const [sendError, setSendError] = useState<string | null>(null);
 
   const [modal, setModal] = useState<'block' | 'report' | 'blocked-confirm' | null>(null);
-  const [selectedMsg, setSelectedMsg] = useState<MessageDto | null>(null);
-  const [shareCardMsg, setShareCardMsg] = useState<MessageDto | null>(null);
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [reportStep, setReportStep] = useState<'pick' | 'done'>('pick');
   const [blocking, setBlocking] = useState(false);
   const [reporting, setReporting] = useState(false);
 
+  // Message action menu
+  const [menuMsg, setMenuMsg] = useState<MessageDto | null>(null);
+  const [menuAnchor, setMenuAnchor] = useState<MenuAnchor | null>(null);
+
+  const [shareCardMsg, setShareCardMsg] = useState<MessageDto | null>(null);
+
+  // Copy toast
+  const [copyToast, setCopyToast] = useState(false);
+  const copyToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Optimistic reactions: messageId → emoji → count delta
   const [localReactions, setLocalReactions] = useState<Record<string, Record<string, number>>>({});
+  // Track which emoji the current user sent per message (for toggle support)
+  const [myReactionMap, setMyReactionMap] = useState<Record<string, string | null>>({});
 
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -76,12 +86,9 @@ export default function ChatPage() {
         messagesApi.list(threadId),
       ]);
       setThread(threadData);
-
-      // Backend newest-first → reverse for display
       setMessages(newestFirst(msgsData.items));
       setNextCursor(msgsData.nextCursor);
 
-      // Mark seen using the newest message (index 0 in backend order)
       const newest = msgsData.items[0];
       if (newest?.sentAt && !threadData.isBlocked) {
         messagesApi.markSeen(threadId, { upToTimestamp: newest.sentAt }).catch(() => {});
@@ -98,21 +105,18 @@ export default function ChatPage() {
     }
   }, [threadId, router]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Scroll to bottom on initial load
   useEffect(() => {
     if (!loading) scrollToBottom('instant');
   }, [loading]);
 
+  // ── Load older ──────────────────────────────────────────────────────────────
   async function handleLoadOlder() {
     if (!nextCursor || loadingOlder) return;
     setLoadingOlder(true);
     try {
       const more = await messagesApi.list(threadId, nextCursor);
-      // Older messages go to the front
       setMessages((prev) => [...newestFirst(more.items), ...prev]);
       setNextCursor(more.nextCursor);
     } catch {
@@ -122,19 +126,15 @@ export default function ChatPage() {
     }
   }
 
+  // ── Send reply ──────────────────────────────────────────────────────────────
   async function handleSend() {
     if (!reply.trim() || !threadId || thread?.isBlocked) return;
     setSendError(null);
     setSending(true);
     const text = reply.trim();
     setReply('');
+    if (inputRef.current) inputRef.current.style.height = 'auto';
 
-    // Reset textarea height
-    if (inputRef.current) {
-      inputRef.current.style.height = 'auto';
-    }
-
-    // Optimistic insert at bottom (newest)
     const tempMsg: MessageDto = {
       id: `temp-${Date.now()}`,
       authorRole: isRecipientView ? 'recipient' : 'anonymous',
@@ -170,22 +170,62 @@ export default function ChatPage() {
     }
   }
 
+  // ── Reactions (with toggle support) ────────────────────────────────────────
   async function handleReact(messageId: string, emoji: string) {
-    setLocalReactions((prev) => ({
-      ...prev,
-      [messageId]: { ...(prev[messageId] ?? {}), [emoji]: ((prev[messageId] ?? {})[emoji] ?? 0) + 1 },
-    }));
+    const currentEmoji = myReactionMap[messageId] ?? null;
+    const isToggleOff = currentEmoji === emoji;
+
+    // Optimistic update
+    if (isToggleOff) {
+      // Remove reaction
+      setMyReactionMap((prev) => ({ ...prev, [messageId]: null }));
+      setLocalReactions((prev) => ({
+        ...prev,
+        [messageId]: { ...(prev[messageId] ?? {}), [emoji]: ((prev[messageId] ?? {})[emoji] ?? 0) - 1 },
+      }));
+    } else {
+      // Add or change reaction
+      if (currentEmoji) {
+        // Remove old emoji delta first
+        setLocalReactions((prev) => ({
+          ...prev,
+          [messageId]: { ...(prev[messageId] ?? {}), [currentEmoji]: ((prev[messageId] ?? {})[currentEmoji] ?? 0) - 1 },
+        }));
+      }
+      setMyReactionMap((prev) => ({ ...prev, [messageId]: emoji }));
+      setLocalReactions((prev) => ({
+        ...prev,
+        [messageId]: { ...(prev[messageId] ?? {}), [emoji]: ((prev[messageId] ?? {})[emoji] ?? 0) + 1 },
+      }));
+    }
+
     try {
-      await reactionsApi.react(messageId, { emoji });
+      if (isToggleOff) {
+        await reactionsApi.unreact(messageId);
+      } else {
+        await reactionsApi.react(messageId, { emoji });
+      }
     } catch {
-      setLocalReactions((prev) => {
-        const r = { ...(prev[messageId] ?? {}) };
-        if ((r[emoji] ?? 0) > 1) r[emoji] -= 1; else delete r[emoji];
-        return { ...prev, [messageId]: r };
-      });
+      // Roll back optimistic update
+      if (isToggleOff) {
+        setMyReactionMap((prev) => ({ ...prev, [messageId]: emoji }));
+        setLocalReactions((prev) => ({
+          ...prev,
+          [messageId]: { ...(prev[messageId] ?? {}), [emoji]: ((prev[messageId] ?? {})[emoji] ?? 0) + 1 },
+        }));
+      } else {
+        setMyReactionMap((prev) => ({ ...prev, [messageId]: currentEmoji }));
+        setLocalReactions((prev) => {
+          const r = { ...(prev[messageId] ?? {}) };
+          if ((r[emoji] ?? 0) > 1) r[emoji] -= 1; else delete r[emoji];
+          if (currentEmoji) r[currentEmoji] = (r[currentEmoji] ?? 0) + 1;
+          return { ...prev, [messageId]: r };
+        });
+      }
     }
   }
 
+  // ── Block ───────────────────────────────────────────────────────────────────
   async function handleBlock() {
     if (!threadId) return;
     setBlocking(true);
@@ -201,23 +241,56 @@ export default function ChatPage() {
     }
   }
 
+  // ── Report ──────────────────────────────────────────────────────────────────
   async function handleReport(reason: CreateReportDto['reason']) {
     if (!threadId) return;
     setReporting(true);
     try {
-      await threadsApi.report(threadId, { reason });
+      await threadsApi.report(threadId, { reason, messageId: menuMsg?.id });
     } catch {
-      // best-effort — show success either way so user isn't confused
+      // best-effort — show success regardless
     } finally {
       setReporting(false);
       setReportStep('done');
     }
   }
 
-  function startLongPress(msg: MessageDto) {
+  // ── Copy ────────────────────────────────────────────────────────────────────
+  async function handleCopy(content: string) {
+    try {
+      await navigator.clipboard.writeText(content);
+    } catch {
+      // Fallback for browsers without clipboard API
+      const el = document.createElement('textarea');
+      el.value = content;
+      el.style.position = 'fixed';
+      el.style.opacity = '0';
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+    }
+    if (copyToastTimer.current) clearTimeout(copyToastTimer.current);
+    setCopyToast(true);
+    copyToastTimer.current = setTimeout(() => setCopyToast(false), 2000);
+  }
+
+  // ── Message menu open/close ─────────────────────────────────────────────────
+  function openMenu(msg: MessageDto, x: number, y: number) {
+    setMenuMsg(msg);
+    setMenuAnchor({ x, y });
+  }
+
+  function closeMenu() {
+    setMenuMsg(null);
+    setMenuAnchor(null);
+  }
+
+  // ── Long press (mobile) ─────────────────────────────────────────────────────
+  function startLongPress(msg: MessageDto, e: React.TouchEvent) {
+    const touch = e.touches[0];
     longPressTimer.current = setTimeout(() => {
-      setSelectedMsg(msg);
-      setShareCardMsg(msg);
+      openMenu(msg, touch.clientX, touch.clientY);
     }, 500);
   }
 
@@ -228,6 +301,7 @@ export default function ChatPage() {
     }
   }
 
+  // ── Merged reactions for display ────────────────────────────────────────────
   function getMessageReactions(msg: MessageDto) {
     const base = msg.reactions ?? {};
     const local = localReactions[msg.id] ?? {};
@@ -236,13 +310,17 @@ export default function ChatPage() {
       merged[emoji] = (merged[emoji] ?? 0) + delta;
       if (merged[emoji] <= 0) delete merged[emoji];
     }
-    return Object.entries(merged).map(([emoji, count]) => ({ emoji, count }));
+    return Object.entries(merged).map(([emoji, count]) => ({
+      emoji,
+      count,
+      active: myReactionMap[msg.id] === emoji,
+    }));
   }
 
   const isBlocked = thread?.isBlocked ?? false;
   const isRecipientView = thread?.viewerRole !== 'sender';
 
-  // ── Loading ────────────────────────────────────────────────────────────────
+  // ── Loading ─────────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <FullscreenShell>
@@ -254,7 +332,7 @@ export default function ChatPage() {
     );
   }
 
-  // ── Error ──────────────────────────────────────────────────────────────────
+  // ── Error ───────────────────────────────────────────────────────────────────
   if (error || !thread) {
     return (
       <FullscreenShell>
@@ -278,7 +356,7 @@ export default function ChatPage() {
   return (
     <>
       <FullscreenShell>
-        {/* ── Header ────────────────────────────────────────────────────── */}
+        {/* ── Header ──────────────────────────────────────────────────────── */}
         <div className="flex items-center gap-3 px-4 border-b-[3px] border-[var(--omg-ink)] bg-[var(--omg-card)] omg-safe-top pb-3 flex-shrink-0">
           <button
             onClick={() => router.push(isRecipientView ? '/inbox' : '/inbox?tab=sent')}
@@ -292,7 +370,6 @@ export default function ChatPage() {
               {isBlocked ? '🚫 محظور' : '🔒 هوية مجهولة'}
             </div>
           </div>
-          {/* Block/report only available to recipient */}
           {isRecipientView && !isBlocked && (
             <div className="flex gap-2 flex-shrink-0">
               <button className="icon-btn" onClick={() => setModal('report')} aria-label="بلّغ">🚩</button>
@@ -301,9 +378,8 @@ export default function ChatPage() {
           )}
         </div>
 
-        {/* ── Messages area ─────────────────────────────────────────────── */}
+        {/* ── Messages area ───────────────────────────────────────────────── */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
-          {/* Blocked banner — only recipient can block, so only show in recipient view */}
           {isRecipientView && isBlocked && (
             <div className="mx-4 mt-3 p-[12px_16px] rounded-[14px] border-[2.5px] border-[var(--omg-red)] text-[13px] text-[var(--omg-red)] font-bold text-center"
               style={{ background: '#FFF0F0', boxShadow: '3px 3px 0 var(--omg-red)' }}>
@@ -311,7 +387,6 @@ export default function ChatPage() {
             </div>
           )}
 
-          {/* Load older messages */}
           {nextCursor && (
             <div className="flex justify-center pt-3 px-4">
               <button
@@ -338,35 +413,63 @@ export default function ChatPage() {
             {messages.map((msg) => {
               const isMe = msg.isMine;
               const reactions = getMessageReactions(msg);
-              // Reactions/quick-react only available to recipient on messages from the sender
               const canReact = isRecipientView && !isMe && !isBlocked;
+
               return (
                 <div
                   key={msg.id}
-                  onTouchStart={() => startLongPress(msg)}
+                  className="group relative"
+                  onTouchStart={(e) => startLongPress(msg, e)}
                   onTouchEnd={cancelLongPress}
                   onTouchMove={cancelLongPress}
-                  onContextMenu={(e) => { e.preventDefault(); setSelectedMsg(msg); setShareCardMsg(msg); }}
+                  onContextMenu={(e) => { e.preventDefault(); openMenu(msg, e.clientX, e.clientY); }}
                 >
-                  <OMGChatBubble
-                    role={isMe ? 'me' : 'them'}
-                    content={msg.content}
-                    time={formatTime(msg.sentAt)}
-                    seen={isMe && !!msg.seenAt}
-                    avatarEmoji={isMe ? undefined : msg.displayName.slice(0, 1)}
-                    reactions={reactions}
-                    onReact={canReact ? (emoji) => handleReact(msg.id, emoji) : undefined}
-                  />
-                  {/* Quick-react strip — recipient only, on incoming anonymous messages */}
+                  {/* Bubble + desktop hover action button */}
+                  <div className="relative">
+                    <OMGChatBubble
+                      role={isMe ? 'me' : 'them'}
+                      content={msg.content}
+                      time={formatTime(msg.sentAt)}
+                      seen={isMe && !!msg.seenAt}
+                      avatarEmoji={isMe ? undefined : msg.displayName.slice(0, 1)}
+                      reactions={reactions}
+                      onReact={canReact ? (emoji) => handleReact(msg.id, emoji) : undefined}
+                    />
+
+                    {/* Desktop hover "⋮" trigger — appears on group-hover, sm+ only */}
+                    <button
+                      className={`
+                        hidden sm:flex items-center justify-center
+                        absolute top-0 w-[28px] h-[28px] rounded-full
+                        bg-[var(--omg-card)] border-[2px] border-[var(--omg-ink)]
+                        text-[var(--omg-muted)] text-[14px] font-black
+                        opacity-0 group-hover:opacity-100 transition-opacity
+                        hover:bg-[var(--omg-yellow)] hover:text-[var(--omg-ink)]
+                        ${isMe ? 'right-0' : 'left-0'}
+                      `}
+                      style={{ boxShadow: '2px 2px 0 var(--omg-ink)' }}
+                      onClick={(e) => { e.stopPropagation(); openMenu(msg, e.clientX, e.clientY); }}
+                      aria-label="خيارات الرسالة"
+                    >
+                      ⋮
+                    </button>
+                  </div>
+
+                  {/* Quick-react strip — recipient only, incoming msgs only */}
                   {canReact && (
                     <div className="flex gap-2 mt-2 mr-[44px] flex-wrap">
                       {QUICK_EMOJIS.map((e) => (
                         <button
                           key={e}
                           onClick={() => handleReact(msg.id, e)}
-                          className="text-[18px] active:scale-90 transition-transform w-[32px] h-[32px] flex items-center justify-center rounded-full bg-[var(--omg-card)] border-[2px] border-[var(--omg-ink)]"
+                          className={`text-[18px] active:scale-90 transition-transform w-[32px] h-[32px] flex items-center justify-center rounded-full border-[2px] border-[var(--omg-ink)] ${
+                            myReactionMap[msg.id] === e
+                              ? 'bg-[var(--omg-yellow)]'
+                              : 'bg-[var(--omg-card)]'
+                          }`}
                           style={{ boxShadow: '2px 2px 0 var(--omg-ink)' }}
                           aria-label={`React ${e}`}
+                          aria-pressed={myReactionMap[msg.id] === e}
                         >
                           {e}
                         </button>
@@ -380,10 +483,22 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* ── Composer ──────────────────────────────────────────────────── */}
-        <div className="flex-shrink-0 border-t-[3px] border-[var(--omg-ink)] bg-[var(--omg-card)]"
-          style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom, 16px))' }}>
+        {/* ── Copy toast ──────────────────────────────────────────────────── */}
+        {copyToast && (
+          <div
+            className="absolute bottom-[100px] left-1/2 -translate-x-1/2 z-[50] bg-[var(--omg-ink)] text-white font-grotesk font-bold text-[12px] px-4 py-[8px] rounded-full pointer-events-none"
+            aria-live="polite"
+            style={{ boxShadow: '3px 3px 0 rgba(0,0,0,0.3)' }}
+          >
+            تم النسخ ✓
+          </div>
+        )}
 
+        {/* ── Composer ────────────────────────────────────────────────────── */}
+        <div
+          className="flex-shrink-0 border-t-[3px] border-[var(--omg-ink)] bg-[var(--omg-card)]"
+          style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom, 16px))' }}
+        >
           {sendError && (
             <div className="mx-4 mt-3 p-[10px_14px] rounded-[12px] border-[2px] border-[var(--omg-red)] text-[12px] text-[var(--omg-red)] font-bold"
               style={{ background: '#FFF0F0' }}>
@@ -391,42 +506,45 @@ export default function ChatPage() {
             </div>
           )}
 
-          {/* Sender always sees composer (block is silently enforced server-side) */}
           {(!isRecipientView || !isBlocked) ? (
-            <div className="flex gap-[10px] items-end px-4 pt-3">
-              <textarea
-                ref={inputRef}
-                className="flex-1 bg-[var(--omg-bg)] border-[3px] border-[var(--omg-ink)] rounded-[20px] px-[16px] py-[11px] text-[15px] font-cairo outline-none text-[var(--omg-text)] resize-none min-h-[48px] max-h-[120px] leading-[1.5]"
-                style={{ boxShadow: '3px 3px 0 var(--omg-ink)' }}
-                placeholder={isRecipientView ? 'اكتب ردك هنا...' : 'أرسل رسالة مجهولة...'}
-                dir="rtl"
-                value={reply}
-                rows={1}
-                disabled={sending}
-                onChange={(e) => {
-                  setReply(e.target.value);
-                  e.target.style.height = 'auto';
-                  e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-                    e.preventDefault();
-                    handleSend();
-                  }
-                }}
-              />
-              <button
-                onClick={handleSend}
-                disabled={sending || !reply.trim()}
-                className="bg-[var(--omg-yellow)] border-[3px] border-[var(--omg-ink)] rounded-full w-[52px] h-[52px] font-grotesk font-black text-[18px] flex-shrink-0 text-[var(--omg-ink)] disabled:opacity-40 flex items-center justify-center active:translate-x-[2px] active:translate-y-[2px]"
-                style={{ boxShadow: '3px 3px 0 var(--omg-ink)' }}
-                aria-label="إرسال"
-              >
-                {sending ? '⏳' : '→'}
-              </button>
+            <div className="px-4 pt-3">
+              <div className="flex gap-[10px] items-end">
+                <textarea
+                  ref={inputRef}
+                  className="flex-1 bg-[var(--omg-bg)] border-[3px] border-[var(--omg-ink)] rounded-[20px] px-[16px] py-[11px] text-[15px] font-cairo outline-none text-[var(--omg-text)] resize-none min-h-[48px] leading-[1.5] overflow-y-auto"
+                  style={{ boxShadow: '3px 3px 0 var(--omg-ink)', maxHeight: 160 }}
+                  placeholder={isRecipientView ? 'اكتب ردك هنا...' : 'أرسل رسالة مجهولة...'}
+                  dir="rtl"
+                  value={reply}
+                  rows={1}
+                  disabled={sending}
+                  onChange={(e) => {
+                    setReply(e.target.value);
+                    e.target.style.height = 'auto';
+                    e.target.style.height = Math.min(e.target.scrollHeight, 160) + 'px';
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.nativeEvent.isComposing) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                />
+                <button
+                  onClick={handleSend}
+                  disabled={sending || !reply.trim()}
+                  className="bg-[var(--omg-yellow)] border-[3px] border-[var(--omg-ink)] rounded-full w-[52px] h-[52px] font-grotesk font-black text-[18px] flex-shrink-0 text-[var(--omg-ink)] disabled:opacity-40 flex items-center justify-center active:translate-x-[2px] active:translate-y-[2px]"
+                  style={{ boxShadow: '3px 3px 0 var(--omg-ink)' }}
+                  aria-label="إرسال"
+                >
+                  {sending ? '⏳' : '→'}
+                </button>
+              </div>
+              <p className="text-[10px] text-[var(--omg-muted)] text-center mt-[6px] font-grotesk" dir="ltr">
+                Ctrl/⌘ + Enter to send &nbsp;·&nbsp; Enter for new line
+              </p>
             </div>
           ) : (
-            /* Recipient blocked the thread — show unblock option */
             <div className="flex gap-2 justify-center px-4 pt-3">
               <OMGButton
                 variant="white"
@@ -448,15 +566,31 @@ export default function ChatPage() {
         </div>
       </FullscreenShell>
 
-      {/* ── Share card image export ────────────────────────────────── */}
+      {/* ── Message action menu ──────────────────────────────────────────── */}
+      <OMGMessageMenu
+        message={menuMsg}
+        anchor={menuAnchor}
+        onClose={closeMenu}
+        myEmoji={menuMsg ? (myReactionMap[menuMsg.id] ?? null) : null}
+        canReact={menuMsg ? (isRecipientView && !menuMsg.isMine && !isBlocked) : false}
+        isRecipientView={isRecipientView}
+        isBlocked={isBlocked}
+        onReact={(emoji) => { if (menuMsg) handleReact(menuMsg.id, emoji); }}
+        onCopy={() => { if (menuMsg) handleCopy(menuMsg.content); }}
+        onReport={() => { setReportStep('pick'); setModal('report'); }}
+        onBlock={() => setModal('block')}
+        onSaveCard={() => { if (menuMsg) setShareCardMsg(menuMsg); }}
+      />
+
+      {/* ── Save-as-card export ──────────────────────────────────────────── */}
       <OMGShareCardExportModal
         isOpen={!!shareCardMsg}
-        onClose={() => { setShareCardMsg(null); setSelectedMsg(null); }}
+        onClose={() => setShareCardMsg(null)}
         message={shareCardMsg?.content ?? ''}
         aliasName={thread?.aliasName}
       />
 
-      {/* ── Block confirmation ─────────────────────────────────────────── */}
+      {/* ── Block confirmation ───────────────────────────────────────────── */}
       <OMGModal isOpen={modal === 'block'} onClose={() => setModal(null)} title={`حظر ${thread.aliasName}؟`}>
         <div className="flex items-center gap-4 mb-5">
           <OMGAvatar emoji={thread.aliasName.slice(0, 1)} size="lg" variant="purple" square />
@@ -474,7 +608,7 @@ export default function ChatPage() {
         <OMGButton variant="ghost" onClick={() => setModal(null)}>إلغاء — خليني أفكر</OMGButton>
       </OMGModal>
 
-      {/* ── Block success ──────────────────────────────────────────────── */}
+      {/* ── Block success ────────────────────────────────────────────────── */}
       <OMGModal isOpen={modal === 'blocked-confirm'} onClose={() => setModal(null)}>
         <div className="text-center py-2">
           <div className="text-[52px] mb-3">🚫</div>
@@ -487,11 +621,11 @@ export default function ChatPage() {
         </div>
       </OMGModal>
 
-      {/* ── Report ────────────────────────────────────────────────────── */}
+      {/* ── Report ──────────────────────────────────────────────────────── */}
       <OMGModal
         isOpen={modal === 'report'}
         onClose={() => { setModal(null); setReportStep('pick'); }}
-        title={reportStep === 'pick' ? 'بلّغ عن المحادثة 🚩' : undefined}
+        title={reportStep === 'pick' ? 'بلّغ عن الرسالة 🚩' : undefined}
         subtitle={reportStep === 'pick' ? 'ساعدنا نحافظ على OMG! آمن للجميع' : undefined}
       >
         {reportStep === 'pick' ? (

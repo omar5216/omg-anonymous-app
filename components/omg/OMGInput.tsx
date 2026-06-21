@@ -1,5 +1,5 @@
 'use client';
-import { InputHTMLAttributes, TextareaHTMLAttributes, ReactNode } from 'react';
+import { InputHTMLAttributes, TextareaHTMLAttributes, ReactNode, forwardRef } from 'react';
 
 interface OMGInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'prefix'> {
   label?: string;
@@ -37,22 +37,24 @@ export function OMGInput({ label, error, prefix, className = '', ...rest }: OMGI
   );
 }
 
-export function OMGTextarea({ label, error, charCount, maxChars, className = '', ...rest }: OMGTextareaProps) {
-  return (
-    <div className="mb-[14px]">
-      {label && (
-        <label className="block text-[9px] font-black text-[var(--omg-ink)] uppercase tracking-[1.5px] mb-[7px] font-grotesk">
-          {label}
-        </label>
-      )}
-      <textarea className={`omg-inp omg-inp-area ${className}`} {...rest} />
-      {(charCount !== undefined && maxChars) && (
-        <div className="flex justify-between mt-[6px]">
-          <span />
-          <span className="text-[12px] text-[var(--omg-muted)] font-grotesk font-bold">{charCount} / {maxChars}</span>
-        </div>
-      )}
-      {error && <p className="mt-[6px] text-[12px] text-[var(--omg-red)] font-bold">{error}</p>}
-    </div>
-  );
-}
+export const OMGTextarea = forwardRef<HTMLTextAreaElement, OMGTextareaProps>(
+  function OMGTextarea({ label, error, charCount, maxChars, className = '', ...rest }, ref) {
+    return (
+      <div className="mb-[14px]">
+        {label && (
+          <label className="block text-[9px] font-black text-[var(--omg-ink)] uppercase tracking-[1.5px] mb-[7px] font-grotesk">
+            {label}
+          </label>
+        )}
+        <textarea ref={ref} className={`omg-inp omg-inp-area ${className}`} {...rest} />
+        {(charCount !== undefined && maxChars) && (
+          <div className="flex justify-between mt-[6px]">
+            <span />
+            <span className="text-[12px] text-[var(--omg-muted)] font-grotesk font-bold">{charCount} / {maxChars}</span>
+          </div>
+        )}
+        {error && <p className="mt-[6px] text-[12px] text-[var(--omg-red)] font-bold">{error}</p>}
+      </div>
+    );
+  }
+);

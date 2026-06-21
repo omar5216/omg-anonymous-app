@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/lib/store/auth';
@@ -26,6 +26,7 @@ export default function PublicSendPage() {
   const [screen, setScreen] = useState<Screen>('loading');
   const [content, setContent] = useState('');
   const [sendError, setSendError] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Load the public profile (no auth required)
   useEffect(() => {
@@ -50,6 +51,7 @@ export default function PublicSendPage() {
     setSendError(null);
     try {
       await linksApi.sendMessage(slug, { content: content.trim() });
+      if (textareaRef.current) textareaRef.current.style.height = 'auto';
       setScreen('success');
     } catch (err) {
       let msg = 'في مشكلة، حاول تاني 😬';
@@ -138,7 +140,7 @@ export default function PublicSendPage() {
             <OMGSticker variant="white">✓ آمن</OMGSticker>
           </div>
           <div className="flex flex-col gap-3 w-full relative z-10">
-            <OMGButton variant="purple" onClick={() => { setContent(''); setScreen('compose'); }}>
+            <OMGButton variant="purple" onClick={() => { setContent(''); if (textareaRef.current) textareaRef.current.style.height = 'auto'; setScreen('compose'); }}>
               ابعت رسالة تانية 🔥
             </OMGButton>
             {accessToken ? (
@@ -253,16 +255,31 @@ export default function PublicSendPage() {
               رسالتك
             </div>
             <OMGTextarea
+              ref={textareaRef}
               placeholder="قول ما في قلبك... 👀"
               maxChars={MAX_CHARS}
               charCount={content.length}
               value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="bg-[var(--omg-bg)] min-h-[110px] shadow-none border-[var(--omg-dim)]"
+              onChange={(e) => {
+                setContent(e.target.value);
+                const el = e.target;
+                el.style.height = 'auto';
+                el.style.height = Math.min(el.scrollHeight, 220) + 'px';
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  handleSend();
+                }
+                // plain Enter falls through → newline
+              }}
+              className="bg-[var(--omg-bg)] min-h-[110px] shadow-none border-[var(--omg-dim)] overflow-y-auto"
+              style={{ maxHeight: 220, resize: 'none' }}
               disabled={screen === 'sending'}
             />
             <div className="flex justify-between items-center mt-2">
               <OMGSticker variant="yellow" className="text-[9px]">هوية مجهولة 🔒</OMGSticker>
+              <span className="text-[10px] text-[var(--omg-muted)] font-grotesk" dir="ltr">Ctrl/⌘ + Enter to send</span>
             </div>
           </OMGCard>
 
