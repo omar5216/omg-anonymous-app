@@ -4,9 +4,8 @@ const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ??
   'https://omg-backend-v2-production.up.railway.app/api/v1';
 
-// Static image — no edge function, no API call, always 200 instantly.
-// Version query busts any previous bad cache on Twitter/Facebook.
-const STATIC_OG_IMAGE = 'https://omgksa.com/og-link-preview.png?v=5';
+const APP_ORIGIN =
+  process.env.NEXT_PUBLIC_APP_URL ?? 'https://omgksa.com';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -14,6 +13,9 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
+
+  // Dynamic OG image — generated per-user by /api/og?slug=<slug>
+  const ogImage = `${APP_ORIGIN}/api/og?slug=${encodeURIComponent(slug)}`;
 
   try {
     const res = await fetch(`${API_BASE}/links/${slug}`, {
@@ -37,17 +39,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       openGraph: {
         title,
         description,
-        url: `https://omgksa.com/s/${slug}`,
+        url: `${APP_ORIGIN}/s/${slug}`,
         siteName: 'OMG!',
         locale: 'ar_SA',
         type: 'website',
         images: [
           {
-            url: STATIC_OG_IMAGE,
+            url: ogImage,
             width: 1200,
             height: 630,
             type: 'image/png',
-            alt: 'OMG Anonymous Chat',
+            alt: `ابعت رسالة مجهولة لـ ${name}`,
           },
         ],
       },
@@ -55,22 +57,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         card: 'summary_large_image',
         title,
         description,
-        images: [STATIC_OG_IMAGE],
+        images: [ogImage],
       },
     };
   } catch {
+    const ogImageFallback = `${APP_ORIGIN}/api/og`;
     return {
       title: 'OMG! Anonymous Chat',
       description: 'ابعتلي رسالة مجهولة 👀',
       openGraph: {
         title: 'OMG! Anonymous Chat',
         description: 'ابعتلي رسالة مجهولة 👀',
-        url: `https://omgksa.com/s/${slug}`,
+        url: `${APP_ORIGIN}/s/${slug}`,
         siteName: 'OMG!',
         type: 'website',
         images: [
           {
-            url: STATIC_OG_IMAGE,
+            url: ogImageFallback,
             width: 1200,
             height: 630,
             type: 'image/png',
@@ -82,7 +85,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         card: 'summary_large_image',
         title: 'OMG! Anonymous Chat',
         description: 'ابعتلي رسالة مجهولة 👀',
-        images: [STATIC_OG_IMAGE],
+        images: [ogImageFallback],
       },
     };
   }
