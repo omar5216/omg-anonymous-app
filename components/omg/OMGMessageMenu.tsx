@@ -59,21 +59,21 @@ export function OMGMessageMenu({
   // Compute floating position for desktop
   useEffect(() => {
     if (!anchor || isMobile) { setPos(null); return; }
-    const MENU_W = 220;
-    const reactionRowHeight = canReact ? 56 : 0;
-    const actionCount = 1 + (isRecipientView ? 2 : 0); // copy + report + block
-    const MENU_H = reactionRowHeight + actionCount * 44 + 16;
+    const MENU_W = 200;
+    const reactionRowH = canReact ? 48 : 0;
+    const actionCount = (onSaveCard ? 2 : 1) + (isRecipientView ? 2 : 0);
+    const MENU_H = reactionRowH + actionCount * 36 + 12;
 
     let left = anchor.x - MENU_W / 2;
-    let top = anchor.y + 10;
+    let top = anchor.y + 4; // 4px below click point — tighter than before
 
     // Clamp to viewport
     left = Math.max(8, Math.min(left, window.innerWidth - MENU_W - 8));
-    if (top + MENU_H > window.innerHeight - 8) top = anchor.y - MENU_H - 10;
+    if (top + MENU_H > window.innerHeight - 8) top = anchor.y - MENU_H - 4;
     top = Math.max(8, top);
 
     setPos({ top, left });
-  }, [anchor, isMobile, canReact, isRecipientView]);
+  }, [anchor, isMobile, canReact, isRecipientView, onSaveCard]);
 
   // Escape key and outside click
   useEffect(() => {
@@ -96,13 +96,13 @@ export function OMGMessageMenu({
     <div ref={menuRef} role="menu" aria-label="خيارات الرسالة" dir="rtl">
       {/* ── Reaction strip ─────────────────────────────────────── */}
       {canReact && (
-        <div className="flex items-center justify-around px-2 py-[10px] border-b-[2.5px] border-[var(--omg-ink)]">
+        <div className="flex items-center justify-around px-2 py-[6px] border-b-[2.5px] border-[var(--omg-ink)]">
           {REACTION_EMOJIS.map((e) => (
             <button
               key={e}
               role="menuitem"
               onClick={() => { onReact(e); onClose(); }}
-              className={`text-[22px] w-[38px] h-[38px] flex items-center justify-center rounded-full transition-transform active:scale-90 ${
+              className={`text-[20px] w-[34px] h-[34px] flex items-center justify-center rounded-full transition-transform active:scale-90 ${
                 myEmoji === e
                   ? 'bg-[var(--omg-yellow)] scale-110 border-[2px] border-[var(--omg-ink)]'
                   : 'hover:bg-[var(--omg-bg)]'
@@ -116,7 +116,7 @@ export function OMGMessageMenu({
       )}
 
       {/* ── Action list ─────────────────────────────────────────── */}
-      <div className="py-[6px]">
+      <div className="py-[3px]">
         <MenuItem
           icon="📋"
           label="نسخ الرسالة"
@@ -189,7 +189,7 @@ export function OMGMessageMenu({
         style={{
           top: pos?.top ?? -9999,
           left: pos?.left ?? -9999,
-          width: 220,
+          width: 200,
           boxShadow: '4px 4px 0 var(--omg-ink)',
         }}
       >
@@ -216,7 +216,7 @@ function MenuItem({
     <button
       role="menuitem"
       onClick={onClick}
-      className={`flex items-center gap-3 w-full px-4 py-[11px] text-[14px] font-bold font-cairo text-right transition-colors active:bg-[var(--omg-bg)] hover:bg-[var(--omg-bg)] ${
+      className={`flex items-center gap-3 w-full px-4 py-[8px] text-[13px] font-bold font-cairo text-right transition-colors active:bg-[var(--omg-bg)] hover:bg-[var(--omg-bg)] ${
         danger ? 'text-[var(--omg-red)]' : 'text-[var(--omg-ink)]'
       }`}
     >

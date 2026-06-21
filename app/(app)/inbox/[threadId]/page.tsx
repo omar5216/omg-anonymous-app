@@ -455,8 +455,8 @@ export default function ChatPage() {
                     </button>
                   </div>
 
-                  {/* Quick-react strip — recipient only, incoming msgs only */}
-                  {canReact && (
+                  {/* Quick-react strip — hidden while menu is open for this message to avoid duplication */}
+                  {canReact && menuMsg?.id !== msg.id && (
                     <div className="flex gap-2 mt-2 mr-[44px] flex-wrap">
                       {QUICK_EMOJIS.map((e) => (
                         <button
@@ -533,15 +533,15 @@ export default function ChatPage() {
                 <button
                   onClick={handleSend}
                   disabled={sending || !reply.trim()}
-                  className="bg-[var(--omg-yellow)] border-[3px] border-[var(--omg-ink)] rounded-full w-[52px] h-[52px] font-grotesk font-black text-[18px] flex-shrink-0 text-[var(--omg-ink)] disabled:opacity-40 flex items-center justify-center active:translate-x-[2px] active:translate-y-[2px]"
+                  className="bg-[var(--omg-yellow)] border-[3px] border-[var(--omg-ink)] rounded-full w-[52px] h-[52px] font-grotesk font-black text-[18px] flex-shrink-0 text-[var(--omg-ink)] disabled:opacity-25 disabled:cursor-not-allowed flex items-center justify-center active:translate-x-[2px] active:translate-y-[2px] transition-opacity"
                   style={{ boxShadow: '3px 3px 0 var(--omg-ink)' }}
                   aria-label="إرسال"
                 >
                   {sending ? '⏳' : '→'}
                 </button>
               </div>
-              <p className="text-[10px] text-[var(--omg-muted)] text-center mt-[6px] font-grotesk" dir="ltr">
-                Ctrl/⌘ + Enter to send &nbsp;·&nbsp; Enter for new line
+              <p className="text-[10px] text-[var(--omg-muted)] text-center mt-[6px] font-cairo" dir="rtl">
+                Enter = سطر جديد &nbsp;·&nbsp; Ctrl/⌘ + Enter = إرسال
               </p>
             </div>
           ) : (

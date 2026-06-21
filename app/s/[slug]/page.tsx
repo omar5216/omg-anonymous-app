@@ -279,7 +279,7 @@ export default function PublicSendPage() {
             />
             <div className="flex justify-between items-center mt-2">
               <OMGSticker variant="yellow" className="text-[9px]">هوية مجهولة 🔒</OMGSticker>
-              <span className="text-[10px] text-[var(--omg-muted)] font-grotesk" dir="ltr">Ctrl/⌘ + Enter to send</span>
+              <span className="text-[10px] text-[var(--omg-muted)] font-cairo" dir="rtl">Ctrl/⌘ + Enter = إرسال</span>
             </div>
           </OMGCard>
 
