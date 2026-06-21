@@ -41,7 +41,6 @@ export function OMGChatBubble({ role, content, time, seen, reactions, avatarEmoj
                 <span className="font-grotesk text-[10px] text-[var(--omg-muted)] font-bold">{r.count}</span>
               </button>
             ))}
-            <button className="react-chip" style={{ borderStyle: 'dashed' }}>+</button>
           </div>
         )}
 

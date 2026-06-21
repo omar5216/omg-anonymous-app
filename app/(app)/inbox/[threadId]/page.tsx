@@ -21,7 +21,6 @@ const REPORT_REASONS: { value: CreateReportDto['reason']; ico: string; label: st
   { value: 'other',         ico: '❓', label: 'سبب تاني' },
 ];
 
-const QUICK_EMOJIS = ['❤️', '😂', '🔥', '👏', '😍', '😭'];
 
 function formatTime(iso: string): string {
   if (!iso) return '';
@@ -455,27 +454,6 @@ export default function ChatPage() {
                     </button>
                   </div>
 
-                  {/* Quick-react strip — hidden while menu is open for this message to avoid duplication */}
-                  {canReact && menuMsg?.id !== msg.id && (
-                    <div className="flex gap-2 mt-2 mr-[44px] flex-wrap">
-                      {QUICK_EMOJIS.map((e) => (
-                        <button
-                          key={e}
-                          onClick={() => handleReact(msg.id, e)}
-                          className={`text-[18px] active:scale-90 transition-transform w-[32px] h-[32px] flex items-center justify-center rounded-full border-[2px] border-[var(--omg-ink)] ${
-                            myReactionMap[msg.id] === e
-                              ? 'bg-[var(--omg-yellow)]'
-                              : 'bg-[var(--omg-card)]'
-                          }`}
-                          style={{ boxShadow: '2px 2px 0 var(--omg-ink)' }}
-                          aria-label={`React ${e}`}
-                          aria-pressed={myReactionMap[msg.id] === e}
-                        >
-                          {e}
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
               );
             })}
